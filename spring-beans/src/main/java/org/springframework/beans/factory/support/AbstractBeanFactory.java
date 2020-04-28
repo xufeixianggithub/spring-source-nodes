@@ -301,6 +301,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						//这里有两个容器 多对多
+						//1.dependentBeanMap<String,LinkedHashSet<String>> 存放dep存在依赖的bean
+						//2.dependenciesForBeanMap<String,LinkedHashSet<String>> 存放beanName存在依赖的bean
 						registerDependentBean(dep, beanName);
 						try {
 							//实例化
@@ -336,6 +339,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
 					try {
+						//缓存创建中的BeanName在ThreadLocal<Object>,单个Object为String,多个转为Set
 						beforePrototypeCreation(beanName);
 						prototypeInstance = createBean(beanName, mbd, args);
 					}
@@ -374,12 +378,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 			catch (BeansException ex) {
+				//若记录了已经创建中的缓存alreadyCreated，这里从缓存中删除
 				cleanupAfterBeanCreationFailure(beanName);
 				throw ex;
 			}
 		}
 
 		// Check if required type matches the type of the actual bean instance.
+		//类型转换
 		if (requiredType != null && !requiredType.isInstance(bean)) {
 			try {
 				T convertedBean = getTypeConverter().convertIfNecessary(bean, requiredType);
@@ -1647,6 +1653,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			Object beanInstance, String name, String beanName, @Nullable RootBeanDefinition mbd) {
 
 		// Don't let calling code try to dereference the factory if the bean isn't a factory.
+		//如果name带有&,为空直接返回,如果beanInstance不是工厂子类，抛异常
 		if (BeanFactoryUtils.isFactoryDereference(name)) {
 			if (beanInstance instanceof NullBean) {
 				return beanInstance;
@@ -1680,6 +1687,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			boolean synthetic = (mbd != null && mbd.isSynthetic());
 
 			//重点看
+			//1.调用getObject方法
+			//2.子类继承FactoryBeanRegistrySupport,实现postProcessObjectFromFactoryBean方法，加工处理FactoryBean
+			//3.设置FactoryBean到factoryBeanObjectCache缓存容器中
 			object = getObjectFromFactoryBean(factory, beanName, !synthetic);
 		}
 		return object;
