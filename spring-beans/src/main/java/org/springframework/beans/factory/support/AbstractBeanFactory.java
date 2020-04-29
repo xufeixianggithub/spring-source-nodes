@@ -1684,6 +1684,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			if (mbd == null && containsBeanDefinition(beanName)) {
 				mbd = getMergedLocalBeanDefinition(beanName);
 			}
+			//isSynthetic()默认为false
 			boolean synthetic = (mbd != null && mbd.isSynthetic());
 
 			//重点看

@@ -96,6 +96,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	protected Object getObjectFromFactoryBean(FactoryBean<?> factory, String beanName, boolean shouldPostProcess) {
 		if (factory.isSingleton() && containsSingleton(beanName)) {
 			synchronized (getSingletonMutex()) {
+				//获取工厂Bean
 				Object object = this.factoryBeanObjectCache.get(beanName);
 				if (object == null) {
 					//调用getObject方法
@@ -107,7 +108,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 					if (alreadyThere != null) {
 						object = alreadyThere;
 					}
-					else {
+					else {//Ask questions:走到这里object是实际需要的bean,但是后续好像都是对工厂bean的处理
 						if (shouldPostProcess) {
 							if (isSingletonCurrentlyInCreation(beanName)) {
 								// Temporarily return non-post-processed object, not storing it yet..
@@ -134,7 +135,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 				return object;
 			}
 		}
-		else {
+		else {//非单例或者还未注册bean到singletonObjects缓存中
 			Object object = doGetObjectFromFactoryBean(factory, beanName);
 			if (shouldPostProcess) {
 				try {
